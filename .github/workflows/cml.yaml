@@ -1,0 +1,35 @@
+name: model-supervisé RL
+
+on: [push]
+
+jobs:
+  run:
+    runs-on: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: cml_run
+        env:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Install dependencies and run your ML script
+          pip install -r requirements.txt
+          python 01_prod_regression_ci__tutorial.py
+
+          # Create report
+          echo "## Metriques:" >> report.md
+          cat metrics.txt >> report.md
+
+          # Configure Git and push changes to the current branch
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add metrics.txt report.md || true
+          git commit -m "Ajout des métriques et du rapport" || echo "Nothing to commit"
+
+          # Use GitHub token to authenticate and push to the current branch
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git push origin HEAD
